@@ -14,6 +14,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x88ccee);
 scene.fog = new THREE.Fog(0x88ccee, 0, 50);
 
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 1.6, 0);
 const player = new THREE.Group();
 scene.add(player);
 player.add(camera); 
@@ -57,8 +59,6 @@ document.getElementById('restartBtn').addEventListener('click', () => {
   console.log("Juego reiniciado correctamente.");
 });
 
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 1.6, 0);
 let vrHealthHUD;
 
 function createVRHealthHUD() {
