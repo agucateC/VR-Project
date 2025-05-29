@@ -14,6 +14,10 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x88ccee);
 scene.fog = new THREE.Fog(0x88ccee, 0, 50);
 
+const player = new THREE.Group();
+scene.add(player);
+player.add(camera); 
+
 document.getElementById('restartBtn').addEventListener('click', () => {
   // Ocultar los elementos de muerte
   document.getElementById('deathMessage').style.display = 'none';
@@ -24,11 +28,14 @@ document.getElementById('restartBtn').addEventListener('click', () => {
   isPlayerDead = false;
   updateHealthBar();
 
-  // Resetear posición del jugador correctamente
-  playerCollider.start.set(0, 5.35, 0);  // posición inicial start
-  playerCollider.end.set(0, 6, 0);       // posición inicial end
-  camera.position.copy(playerCollider.end);
-  camera.rotation.set(0, 0, 0);
+  playerCollider.start.set(0, 0.35, 0);  // posición inicial start (ajustada para VR)
+  playerCollider.end.set(0, 1, 0);       // posición inicial end (ajustada para VR)
+  
+  // Solo resetear posición y rotación de la cámara si NO estamos en VR
+  if (!renderer.xr.isPresenting) {
+    camera.position.copy(playerCollider.end);
+    camera.rotation.set(0, 0, 0);
+  }
   
   // Resetear velocidad
   playerVelocity.set(0, 0, 0);
@@ -51,7 +58,46 @@ document.getElementById('restartBtn').addEventListener('click', () => {
 });
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 1.6, 0); // Altura aproximada de los ojos en VR
+camera.position.set(0, 1.6, 0);
+let vrHealthHUD;
+
+function createVRHealthHUD() {
+  const hud = new THREE.Group();
+  hud.position.set(0, -0.2, -0.5); // Posición frente al jugador
+  
+  // Fondo
+  const bgGeometry = new THREE.PlaneGeometry(0.3, 0.05);
+  const bgMaterial = new THREE.MeshBasicMaterial({ color: 0x555555 });
+  const background = new THREE.Mesh(bgGeometry, bgMaterial);
+  hud.add(background);
+  
+  // Barra de salud
+  const healthGeometry = new THREE.PlaneGeometry(0.28, 0.03);
+  const healthMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const healthBar = new THREE.Mesh(healthGeometry, healthMaterial);
+  healthBar.position.z = 0.01;
+  hud.add(healthBar);
+  
+  camera.add(hud);
+  
+  return {
+    object: hud,
+    bar: healthBar,
+    update: function(healthPercent) {
+      this.bar.scale.x = Math.max(healthPercent, 0);
+      
+      if (healthPercent > 0.6) {
+        this.bar.material.color.setHex(0x00ff00);
+      } else if (healthPercent > 0.3) {
+        this.bar.material.color.setHex(0xffff00);
+      } else {
+        this.bar.material.color.setHex(0xff0000);
+      }
+    }
+  };
+}
+// Llama a esta función después de crear la cámara
+vrHealthHUD = createVRHealthHUD(); // Altura aproximada de los ojos en VR
 scene.add(camera); // La cámara debe ser parte de la escena para VR
 let worldReady = false;
 const fillLight1 = new THREE.HemisphereLight(0x8dc1de, 0x00668d, 1.5);
@@ -100,6 +146,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.NoToneMapping;
 renderer.xr.enabled = true;  // Habilitar WebXR
+renderer.xr.setReferenceSpaceType('local-floor');
 container.appendChild(renderer.domElement);
 
 // Agrega el botón VR
@@ -159,9 +206,9 @@ for (let i = 0; i < NUM_SPHERES; i++) {
 const worldOctree = new Octree();
 
 const playerCollider = new Capsule(
-  new THREE.Vector3(0, 5.35, 0),  // posición inicial start
-  new THREE.Vector3(0, 6, 0),     // posición inicial end
-  0.35                            // radio
+  new THREE.Vector3(0, 0.35, 0),  // Ajusta la altura
+  new THREE.Vector3(0, 1, 0),
+  0.35
 );
 
 
@@ -365,7 +412,7 @@ function spheresCollisions() {
 }
 
 function updatePlayer(deltaTime) {
-  let damping = Math.exp(- 4 * deltaTime) - 1;
+  let damping = Math.exp(-4 * deltaTime) - 1;
 
   if (worldReady) {
     if (!playerOnFloor) {
@@ -383,9 +430,11 @@ function updatePlayer(deltaTime) {
     playerCollisions();
   }
 
-  camera.position.copy(playerCollider.end);
+  // Solo actualizar la posición de la cámara si no estamos en VR
+  if (!renderer.xr.isPresenting) {
+    camera.position.copy(playerCollider.end);
+  }
 }
-
 
 function getForwardVector() {
 
@@ -409,27 +458,31 @@ function getSideVector() {
 }
 
 function controls(deltaTime) {
-  // gives a bit of air control
   const speedDelta = deltaTime * (playerOnFloor ? 25 : 8);
-
-  // Usar la dirección de la cámara en VR
-  const forward = getForwardVector();
-  const side = getSideVector();
+  
+  // Obtener la dirección de la cámara (pero ignorar la inclinación de la cabeza)
+  const tempDirection = new THREE.Vector3();
+  camera.getWorldDirection(tempDirection);
+  tempDirection.y = 0;
+  tempDirection.normalize();
+  
+  const sideDirection = new THREE.Vector3();
+  camera.getWorldDirection(sideDirection);
+  sideDirection.y = 0;
+  sideDirection.normalize();
+  sideDirection.cross(camera.up);
 
   if (keyStates['KeyW']) {
-    playerVelocity.add(forward.multiplyScalar(speedDelta));
+    playerVelocity.add(tempDirection.clone().multiplyScalar(speedDelta));
   }
-
   if (keyStates['KeyS']) {
-    playerVelocity.add(forward.multiplyScalar(-speedDelta));
+    playerVelocity.add(tempDirection.clone().multiplyScalar(-speedDelta));
   }
-
   if (keyStates['KeyA']) {
-    playerVelocity.add(side.multiplyScalar(-speedDelta));
+    playerVelocity.add(sideDirection.clone().multiplyScalar(-speedDelta));
   }
-
   if (keyStates['KeyD']) {
-    playerVelocity.add(side.multiplyScalar(speedDelta));
+    playerVelocity.add(sideDirection.clone().multiplyScalar(speedDelta));
   }
 
   if (playerOnFloor && keyStates['Space']) {
