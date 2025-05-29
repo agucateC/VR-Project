@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Zombie Survival VR</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+  <!-- Metadatos esenciales para WebXR -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="xr-standard" content="1">
+  <link rel="stylesheet" href="CSS/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div id="container"></div>
+  <!-- Contenedor para el botón VR -->
+  <div id="vr-button-container"></div>
+
+  <!-- HUD (Heads-Up Display) -->
+  <div id="hud">
+    <div id="health-bar-container">
+      <div id="health-bar"></div>
+    </div>
+  </div>
+  <!-- Pantalla de carga -->
+  <div id="loading-screen">
+    <div id="logo"></div>
+    <div id="progress-text">Cargando... 0%</div>
+    <div id="progress-bar-container">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+
+  <!-- Mensaje de muerte -->
+  <div id="deathMessage" style="display: none;">
+    <div id="deathText"></div>
+    <button id="restartBtn">Reintentar</button>
+  </div>
+
+  <script type="importmap">
+			{
+                "imports": {
+                  "three": "https://unpkg.com/three@v0.163.0/build/three.module.js",
+                  "three/addons/": "https://unpkg.com/three@v0.163.0/examples/jsm/"
+                }
+            }
+		</script>
+  <div id="loading-screen">
+    <div id="logo"></div>
+    <div id="progress-text">Cargando... 0%</div>
+    <div id="progress-bar-container">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+  <div id="deathMessage" style="display: none;">
+    <div id="deathText"></div>
+    <button id="restartBtn">Reintentar</button>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
