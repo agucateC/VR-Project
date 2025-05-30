@@ -13,6 +13,11 @@ const clock = new THREE.Clock();
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x88ccee);
 scene.fog = new THREE.Fog(0x88ccee, 0, 50);
+const testGeometry = new THREE.BoxGeometry(1, 1, 1);
+const testMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const testCube = new THREE.Mesh(testGeometry, testMaterial);
+testCube.position.set(0, 0, -5);
+scene.add(testCube);
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.6, 0);
@@ -158,7 +163,7 @@ camera.add(listener);
 // Cargar el sonido de fondo
 const backgroundSound = new THREE.Audio(listener);
 const audioLoader = new THREE.AudioLoader();
-audioLoader.load('../sonidos/ambiente.mp3', function (buffer) {
+audioLoader.load('sonidos/ambiente.mp3', function (buffer) {
   backgroundSound.setBuffer(buffer);
   backgroundSound.setLoop(true);
   backgroundSound.setVolume(0.5); // Puedes ajustar volumen
@@ -493,10 +498,10 @@ function controls(deltaTime) {
 const loader = new GLTFLoader().setPath('modelos/');
 
 loader.load('../modelos/la_ruina.glb', (gltf) => {
-
+  console.log("Modelo cargado, objetos en escena:", gltf.scene.children.length);
   scene.add(gltf.scene);
 
-  worldOctree.fromGraphNode(gltf.scene);
+  //worldOctree.fromGraphNode(gltf.scene);
 
   worldReady = true;
 
